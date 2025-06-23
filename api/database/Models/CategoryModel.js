@@ -1,4 +1,5 @@
 
+const { where, BelongsToMany, Op } = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
     const Category = sequelize.define("Category", {
@@ -9,7 +10,12 @@ module.exports = (sequelize, DataTypes) => {
         },
         name: {
             type: DataTypes.STRING(100),
-            allowNull: false
+            allowNull: false,
+            validate: {
+                notEmpty: {
+                    msg: "Name cannot be empty"
+                }
+            }
         },
         type: {
             type: DataTypes.ENUM('income', 'expense'),
@@ -47,10 +53,29 @@ module.exports = (sequelize, DataTypes) => {
 
     );
 
+    Category.getCategoryName = async function (name) {
+        return await this.findOne({
+
+            where: {
+                name: name.toLowerCase(),
+            }
+
+        });
+    };
+
+    Category.findById = async function (id) {
+        return await this.findOne({
+            where:{
+                id: id
+            }
+        });
+    };
+
     Category.associate = (models) => {
         Category.belongsTo(models.User, {
             foreignKey: 'userId',
-            onDelete: 'CASCADE'
+            onDelete: 'CASCADE',
+            as: 'users',
         });
 
         Category.hasMany(models.Transaction, {

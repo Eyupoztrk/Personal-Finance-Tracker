@@ -7,7 +7,8 @@ const database = require("../config/database");
 
  const sequelize = new Sequelize(development.database,development.username,development.password,{
             host: development.host,
-            dialect: development.dialect
+            dialect: development.dialect,
+            logging: false,
         });
 
 module.exports = sequelize;

@@ -1,6 +1,7 @@
 
 const bcrypt = require('bcryptjs');
-
+const { where, BelongsToMany, Op } = require('sequelize');
+const validator = require('validator');
 
 module.exports = (sequelize, DataTypes) => {
     const User = sequelize.define('User',
@@ -127,71 +128,115 @@ module.exports = (sequelize, DataTypes) => {
             ],
 
             hooks: {
+                 
+                beforeCreate: async (user) => {
+                    if (user.password) {
+                        const salt = await bcrypt.genSalt(12);
+                        user.password = await bcrypt.hash(user.password, salt);
+                    }
+                },
+                
+                beforeUpdate: async (user) => {
+                    if (user.changed('password')) {
+                        const salt = await bcrypt.genSalt(12);
+                        user.password = await bcrypt.hash(user.password, salt);
+                    }
 
-            }
+                    if(user.changed("email"))
+                    {
+                        if(!validator.isEmail(user.email))
+                            throw new Error("Invalid email address")
+                    }
+                },
+                
+            
+        }
         }
     );
 
-    // Instance Methods
-    User.prototype.checkPassword = async function (password) {
-        return await bcrypt.compare(password, this.password);
-    };
+// Instance Methods if user's id is known
+User.prototype.checkPassword = async function (password) {
+    return await bcrypt.compare(password, this.password);
+};
 
-    User.prototype.getFullName = function () {
-        return `${this.firstName} ${this.lastName}`;
-    };
 
-    User.prototype.toJSON = function () {
-        const values = Object.assign({}, this.get());
-        delete values.password; // Şifreyi response'dan çıkar
-        return values;
-    };
 
-    // Class Methods
-    User.findByEmail = async function (email) {
-        return await this.findOne({
-            where: { email: email.toLowerCase() }
-        });
-    };
+User.prototype.getFullName = function () {
+    return `${this.firstName} ${this.lastName}`;
+};
 
-    User.findActiveUsers = async function () {
-        return await this.findAll({
-            where: { isActive: true },
-            attributes: { exclude: ['password'] }
-        });
-    };
+User.prototype.toJSON = function () {
+    const values = Object.assign({}, this.get());
+    delete values.password;
+    return values;
+};
 
-    // Associations
-    User.associate = function (models) {
-        // User has many Categories
-        User.hasMany(models.Category, {
-            foreignKey: 'userId',
-            as: 'categories',
-            onDelete: 'CASCADE'
-        });
 
-        // User has many Transactions
-        User.hasMany(models.Transaction, {
-            foreignKey: 'userId',
-            as: 'transactions',
-            onDelete: 'CASCADE'
-        });
 
-        // User has many Budgets
-        User.hasMany(models.Budget, {
-            foreignKey: 'userId',
-            as: 'budgets',
-            onDelete: 'CASCADE'
-        });
+// Class Methods if it's for all users 
+User.findByEmail = async function (email) {
+    return await this.findOne({
+        where: { email: email.toLowerCase() }
+    });
+};
 
-        // User has many SavingsGoals
-        User.hasMany(models.SavingsGoal, {
-            foreignKey: 'userId',
-            as: 'savingsGoals',
-            onDelete: 'CASCADE'
-        });
-    };
+User.CheckEmailForUpdate = async function (user,email){
+    return await this.findOne({
+        where: {
+            email: email.toLowerCase(),
+            id: {[Op.ne]: user.id} // not equal
+        }
+    })
+};
 
-    return User;
+User.findActiveUsers = async function () {
+    return await this.findAll({
+        where: { isActive: true },
+        attributes: { exclude: ['password'] }
+    });
+};
+
+User.findById = async function (id) {
+    return await this.findOne({
+        where: { id: id }
+    });
+};
+
+
+
+
+
+// Associations
+User.associate = function (models) {
+    // User has many Categories
+    User.hasMany(models.Category, {
+        foreignKey: 'userId',
+        as: 'categories',
+        onDelete: 'CASCADE'
+    });
+
+    // User has many Transactions
+    User.hasMany(models.Transaction, {
+        foreignKey: 'userId',
+        as: 'transactions',
+        onDelete: 'CASCADE'
+    });
+
+    // User has many Budgets
+    User.hasMany(models.Budget, {
+        foreignKey: 'userId',
+        as: 'budgets',
+        onDelete: 'CASCADE'
+    });
+
+    // User has many SavingsGoals
+    User.hasMany(models.SavingsGoal, {
+        foreignKey: 'userId',
+        as: 'savingsGoals',
+        onDelete: 'CASCADE'
+    });
+};
+
+return User;
 
 };
