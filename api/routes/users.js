@@ -2,15 +2,36 @@ var express = require('express');
 var router = express.Router();
 const db = require("../database/Models");
 const { User, Category, Transaction } = db;
-
+const {development} = require("../config/database");
 const Response = require("../lib/Response");
 const Enum = require("../config/Enum");
 const CustomError = require("../lib/Error");
 const JWT = require("jwt-simple");
 const auth = require("../lib/auth")();
 const config = require('../config');
+const rateLimit = require("express-rate-limit");
+const postgresStores = require('@acpr/rate-limit-postgresql')
 
-/* GET users listing. */
+
+
+let limiter =  rateLimit({
+	store: new postgresStores.PostgresStore(
+		{
+			user:development.username,
+			password: development.password,
+			host: development.host,
+			database: development.database,
+			port: development.port,
+		},
+		'aggregated_store',
+	),
+	windowMs: 15 * 60 * 1000, 
+	max: 3,
+	message:
+		'Too many accounts created from this IP, please try again after 15 minutes',
+	standardHeaders: 'draft-7', 
+	legacyHeaders: false,
+})
 
 
 router.post('/signup', async (req, res, next) => {
@@ -90,7 +111,7 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-router.post('/signin', async (req, res, next) => {
+router.post('/signin', limiter, async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
