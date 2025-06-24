@@ -1,12 +1,16 @@
 var express = require('express');
 var router = express.Router();
 const db = require("../database/Models");
-const { User, Category, Transaction } = db;
+const { User, Category } = db;
 
 const Response = require("../lib/Response");
 const Enum = require("../config/Enum");
 const CustomError = require("../lib/Error");
+const auth = require("../lib/auth")();
 
+router.all('*', auth.authenticate(), (req, res, next) => {
+  next(); 
+});
 router.get("/", async (req, res) => {
     try {
         const categories = await Category.findAll({
@@ -72,7 +76,7 @@ router.post("/update", async (req, res) => {
 
         Object.assign(category, updates);
 
-        await category.save(); // beforeUpdate hook'ları burada çalışır
+        await category.save();
         res.json(Response.successResponse(category, Enum.HTTP_CODES.ACCEPTED));
     }
     catch (err) {
@@ -80,5 +84,25 @@ router.post("/update", async (req, res) => {
     }
 });
 
+router.post("/delete", async (req, res) => {
+    try {
+        let body = req.body;
+        if (!body.id)
+            throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST, "ID not available", "ID not available");
+
+        const category = await Category.findById(body.id);
+
+        if (!category)
+            throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST, "Category not available", "Category not available");
+
+
+        await category.destroy();
+
+        res.json(Response.successResponse(category, Enum.HTTP_CODES.ACCEPTED));
+    }
+    catch (err) {
+        res.json(Response.errorResponse(err, Enum.HTTP_CODES.BAD_REQUEST))
+    }
+});
 
 module.exports = router;

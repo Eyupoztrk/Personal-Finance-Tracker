@@ -1,3 +1,5 @@
+const { where } = require("sequelize");
+
 module.exports = (sequelize, DataTypes) => {
     const Transaction = sequelize.define('Transaction', {
         id: {
@@ -51,6 +53,16 @@ module.exports = (sequelize, DataTypes) => {
             { fields: ['tags'], using: 'GIN', name: 'transactions_tags_idx' }
         ]
     });
+
+    Transaction.findById = async function (id){
+        return await this.findOne(
+            {
+                where: {
+                    id: id
+                }
+            }
+        );
+    };
 
     Transaction.associate = (models) => {
         Transaction.belongsTo(models.User, {

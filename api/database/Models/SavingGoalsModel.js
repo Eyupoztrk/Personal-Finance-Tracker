@@ -47,6 +47,14 @@ module.exports = (sequelize, DataTypes)  => {
         timestamps: false
     });
 
+     SavingsGoal.findById = async function (id) {
+        return await this.findOne({
+            where:{
+                id: id
+            }
+        });
+    };
+
     SavingsGoal.associate = (models) => {
         SavingsGoal.belongsTo(models.User, {
             foreignKey: 'userId',

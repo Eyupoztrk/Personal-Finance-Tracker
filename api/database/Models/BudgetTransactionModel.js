@@ -28,6 +28,15 @@ module.exports = (sequelize, DataTypes) => {
         }
     });
 
+    BudgetTransaction.findById = async function (id) {
+        return await this.findOne({
+            where:{
+                id: id
+            }
+        });
+    };
+
+
     BudgetTransaction.associate = (models) => {
         BudgetTransaction.belongsTo(models.Budget, {
             foreignKey: 'budgetId',

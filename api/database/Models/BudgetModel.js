@@ -61,6 +61,26 @@ module.exports = (sequelize, DataTypes) => {
         ]
     });
 
+
+     Budget.getBudgetName = async function (name) {
+        return await this.findOne({
+
+            where: {
+                name: name.toLowerCase(),
+            }
+
+        });
+    };
+
+    Budget.findById = async function (id) {
+        return await this.findOne({
+            where:{
+                id: id
+            }
+        });
+    };
+
+
     Budget.associate = (models) => {
         Budget.belongsTo(models.User, {
             foreignKey: 'userId',
