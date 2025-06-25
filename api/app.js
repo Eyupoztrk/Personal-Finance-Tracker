@@ -5,7 +5,7 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
 var indexRouter = require('./routes/index');
-const db = require('./database/Models/Index'); 
+const db = require('./database/Models'); 
 const { User, Category, Transaction } = db; // ihtiyacın olanları çek
 
 
